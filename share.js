@@ -8,7 +8,7 @@ const LZ = () => {
   return lz;
 };
 
-const VERSION = 1;
+const VERSION = 2; // v2: 장소마다 결제자 (v1: 모임 전체 결제자 1명)
 
 /** 짧은 공유 ID (원 공유와 수신자 행동을 연결하는 용도) */
 export function newShareId() {
@@ -28,11 +28,8 @@ const fromMask = (mask, n) => Array.from({ length: n }, (_, i) => i).filter((i) 
 export function encodeState(state, shareId) {
   const compact = {
     v: VERSION,
-    t: state.title || '',
     m: state.members,
-    p: state.payer,
-    u: state.unit,
-    i: state.items.map((it) => [it.name || '', it.amount, toMask(it.who)]),
+    i: state.items.map((it) => [it.name || '', it.amount, toMask(it.who), it.payer]),
     s: shareId,
   };
   return LZ().compressToEncodedURIComponent(JSON.stringify(compact));
@@ -44,19 +41,17 @@ export function decodeState(encoded) {
     const json = LZ().decompressFromEncodedURIComponent(encoded);
     if (!json) return null;
     const c = JSON.parse(json);
-    if (c.v !== VERSION || !Array.isArray(c.m) || !Array.isArray(c.i)) return null;
+    if (![1, 2].includes(c.v) || !Array.isArray(c.m) || !Array.isArray(c.i)) return null;
     const n = c.m.length;
     return {
       shareId: typeof c.s === 'string' ? c.s : '',
       state: {
-        title: typeof c.t === 'string' ? c.t : '',
         members: c.m.map(String),
-        payer: Number(c.p) || 0,
-        unit: Number(c.u) || 1,
-        items: c.i.map(([name, amount, mask]) => ({
+        items: c.i.map(([name, amount, mask, payer]) => ({
           name: String(name ?? ''),
           amount: Number(amount),
           who: fromMask(Number(mask) || 0, n),
+          payer: Number(c.v === 1 ? c.p : payer) || 0,
         })),
       },
     };

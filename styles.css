@@ -118,11 +118,11 @@ button { cursor: pointer; }
   font-size: 14px; color: var(--muted);
 }
 .receipt-head span:first-child { color: var(--ink); font-weight: 700; }
-.receipt-to { margin: 10px 0 2px; font-size: 14px; color: var(--muted); }
-.receipt-to b { color: var(--ink); }
-
+.receipt-label {
+  margin: 18px 0 0; font-size: 13px; font-weight: 700; color: var(--muted);
+}
 .lines { list-style: none; margin: 0; padding: 0; }
-.lines li, .receipt-payer {
+.lines li {
   display: grid;
   grid-template-columns: 1fr auto;
   column-gap: 12px;
@@ -130,14 +130,14 @@ button { cursor: pointer; }
   border-bottom: 1px dashed var(--line);
 }
 .lines li:last-child { border-bottom: 0; }
-.lines span, .receipt-payer span { font-weight: 600; }
+.lines span { font-weight: 600; }
 .lines b { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; }
-.lines small, .receipt-payer small {
+.lines small {
   grid-column: 1 / -1;
   margin-top: 2px;
   font-size: 13px; color: var(--muted);
 }
-.lines em, .receipt-payer em {
+.lines em {
   font-style: normal; font-size: 12px; font-weight: 600;
   margin-left: 6px; padding: 2px 7px; border-radius: 99px;
   background: var(--green-soft); color: var(--green-deep);
@@ -146,12 +146,13 @@ button { cursor: pointer; }
 .lines .is-diff em, .lines em.out { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); }
 .lines s { font-size: 14px; font-weight: 500; color: var(--muted); margin-right: 6px; }
 
-.receipt-payer {
-  border-top: 1px dashed var(--line);
-  border-bottom: 0;
-  color: var(--muted);
-}
-.receipt-payer b { font-weight: 700; color: var(--muted); }
+.flow { display: inline-flex; align-items: center; gap: 6px; }
+.flow i { font-style: normal; color: var(--green); font-weight: 800; }
+.lines .minus { color: var(--red); white-space: nowrap; }
+.lines .none span { color: var(--muted); }
+.lines--quiet li { padding: 9px 0; }
+.lines--quiet b { font-size: 16px; font-weight: 700; color: var(--muted); }
+.lines--quiet span { font-weight: 600; color: var(--muted); }
 
 .receipt-total {
   display: flex; justify-content: space-between; align-items: baseline;
@@ -165,28 +166,23 @@ button { cursor: pointer; }
 .receipt--demo { margin-bottom: 24px; transform: rotate(-1.2deg); }
 .receipt--demo .receipt-foot { color: var(--red); font-weight: 600; }
 
-/* ---------- 계산기 ---------- */
-.calc-title { margin: 8px 0 4px; font-size: 30px; font-weight: 800; letter-spacing: -0.045em; line-height: 1.2; }
-.calc-sub { margin: 0 0 8px; color: var(--muted); }
+/* ---------- 단계 화면 ---------- */
+.progress { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.progress i { width: 18px; height: 4px; border-radius: 2px; background: var(--line); }
+.progress i.on { background: var(--green); }
+.progress b { margin-left: 6px; font-size: 13px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 
-.step { padding: 24px 0; border-bottom: 1px solid var(--line); }
-.step:last-of-type { border-bottom: 0; }
-.step h2 {
-  display: flex; align-items: center; gap: 10px;
-  margin: 0 0 14px;
-  font-size: 20px; font-weight: 800; letter-spacing: -0.035em;
+.step { padding-top: 20px; }
+.kicker { margin: 0 0 8px; font-size: 15px; font-weight: 700; color: var(--green-deep); }
+.step-title {
+  margin: 0;
+  font-size: clamp(28px, 8.4vw, 34px); line-height: 1.22;
+  font-weight: 800; letter-spacing: -0.045em;
 }
-.step-no {
-  display: inline-grid; place-items: center;
-  width: 26px; height: 26px; border-radius: 50%;
-  background: var(--ink); color: var(--table);
-  font-size: 14px; font-weight: 800;
-}
-.label { display: block; margin: 18px 0 8px; font-size: 14px; font-weight: 700; color: var(--muted); }
-.opt { font-weight: 500; }
-.hint { margin: -6px 0 14px; font-size: 14px; color: var(--muted); }
-.step .hint:last-child { margin-bottom: 0; }
-.segs + .hint { margin: 10px 0 0; }
+.step-sub { margin: 10px 0 24px; color: var(--muted); }
+
+.label { display: block; margin: 16px 0 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.hint { margin: 12px 0 0; font-size: 14px; color: var(--muted); }
 
 .field {
   width: 100%;
@@ -216,14 +212,6 @@ button { cursor: pointer; }
 
 .add-row { display: flex; gap: 8px; }
 .add-row .btn { min-height: 48px; flex: none; }
-
-.segs { display: flex; flex-wrap: wrap; gap: 8px; }
-.seg {
-  min-height: 40px; padding: 0 14px;
-  border-radius: 10px; border: 1px solid var(--line);
-  background: var(--paper); font-weight: 600; font-size: 15px;
-}
-.seg.on { background: var(--ink); border-color: var(--ink); color: var(--table); }
 
 .items { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; }
 .item {
@@ -258,6 +246,36 @@ button { cursor: pointer; }
   background: var(--green-soft); border-color: transparent; color: var(--green-deep);
   text-decoration: none;
 }
+.sum {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin: 20px 0 0; padding-top: 14px; border-top: 1px solid var(--line);
+  font-weight: 700;
+}
+.sum b { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+
+.place { display: flex; justify-content: space-between; gap: 12px; font-weight: 700; }
+.place b { font-variant-numeric: tabular-nums; }
+.payer {
+  position: relative; display: block; margin-top: 12px;
+}
+.payer select {
+  appearance: none; -webkit-appearance: none;
+  width: 100%; min-height: 48px; padding: 0 40px 0 16px;
+  border-radius: 12px; border: 1px solid transparent;
+  background: var(--ink); color: var(--table);
+  font-weight: 700; font-size: 16px;
+}
+.payer::after {
+  content: ""; position: absolute; right: 18px; top: 50%;
+  width: 8px; height: 8px; margin-top: -6px;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg); color: var(--table); pointer-events: none;
+}
+.payer.is-empty select { background: var(--paper); color: var(--ink); border-color: var(--green); }
+.payer.is-empty::after { color: var(--green); }
+.item--people .label { margin-top: 14px; margin-bottom: 0; }
+.item--people .who { margin-top: 8px; }
+
 .item-note { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: var(--red); }
 
 .errors {
@@ -272,7 +290,7 @@ button { cursor: pointer; }
 /* 하단 고정 바 */
 .dock {
   position: fixed; left: 0; right: 0; bottom: 0;
-  display: flex; align-items: center; gap: 16px;
+  display: flex; align-items: center; gap: 8px;
   max-width: 480px; margin: 0 auto;
   padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
   background: color-mix(in srgb, var(--table) 88%, transparent);
@@ -280,15 +298,37 @@ button { cursor: pointer; }
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
 }
-.dock-total { display: flex; flex-direction: column; line-height: 1.2; flex: 1; min-width: 0; }
-.dock-total span { font-size: 13px; color: var(--muted); }
-.dock-total b { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-.dock .btn { flex: 0 0 auto; min-width: 140px; }
+.dock-back { flex: 0 0 96px; }
+.dock-next { flex: 1 1 auto; }
 
 /* ---------- 결과 ---------- */
 .result { padding-top: 16px; }
 .result-title { margin: 0 0 20px; font-size: 28px; font-weight: 800; letter-spacing: -0.045em; }
 .actions { display: grid; gap: 10px; }
+.actions-row { display: flex; justify-content: center; gap: 4px; }
+
+/* ---------- 정산 중 ---------- */
+.loading { padding-top: 15vh; text-align: center; }
+.loading .step-sub { margin-bottom: 0; }
+.printer {
+  position: relative; width: 132px; height: 120px; margin: 0 auto 28px;
+}
+.printer::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 20px;
+  border-radius: 10px; background: var(--ink);
+}
+.paper {
+  position: absolute; left: 16px; right: 16px; top: 10px;
+  display: grid; gap: 10px; align-content: start;
+  padding: 22px 14px 0; height: 0; overflow: hidden;
+  background: var(--paper); box-shadow: var(--shadow);
+  animation: feed 1.4s cubic-bezier(.3, .7, .3, 1) forwards;
+}
+.paper i { display: block; height: 6px; border-radius: 3px; background: var(--line); }
+.paper i:nth-child(2) { width: 70%; }
+.paper i:nth-child(3) { width: 85%; }
+.paper i:last-child { width: 50%; background: var(--green); }
+@keyframes feed { to { height: 104px; } }
 
 /* 결과 화면 영수증: 한 번만 인쇄되듯 내려오는 등장 */
 .result .receipt { animation: print .45s cubic-bezier(.2, .8, .2, 1) both; }
@@ -313,6 +353,7 @@ button { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .receipt--demo { transform: none; }
+  .paper { height: 104px; }
 }
 
 @media (min-width: 640px) {

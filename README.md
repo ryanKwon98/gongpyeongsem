@@ -44,20 +44,28 @@ npm install && npm test
 4. 완료되면 `https://<프로젝트명>.vercel.app` 주소가 생겨요. 이후 GitHub에 파일을 올릴 때마다 자동으로 다시 배포돼요.
 5. 커스텀 도메인은 추후 Vercel 프로젝트의 **Settings → Domains**에서 연결해요.
 
+## 화면 흐름
+
+(랜딩 A) → 1 함께한 사람 → 2 장소와 결제금액 → 3 결제한 사람·빠진 사람 → 정산 중(1.5초) → 결과
+
+각 단계에 이전·다음 버튼이 있고, 브라우저 뒤로 가기도 이전 단계로 돌아가요.
+
 ## 정산 규칙
 
-- 각 항목은 그 항목에 체크된 사람끼리 똑같이 나눠요.
-- 결제한 사람을 제외한 사람은 자기 몫을 정산 단위(1·10·100원)로 버림한 금액을 보내요.
-- 버림으로 생긴 끝전은 결제한 사람이 부담해요. 모든 사람 몫의 합은 항상 총액과 같아요.
+- 장소마다 결제한 사람을 고를 수 있어요. 장소마다 결제자가 달라도 돼요.
+- 각 장소 금액은 그 장소에 함께한 사람끼리 똑같이 나눠요. 빠진 사람은 그 장소 금액을 내지 않아요.
+- 1원 단위로 계산하고, 나누어떨어지지 않는 끝전은 그 장소를 결제한 사람이 부담해요.
+- 보낼 돈은 "누가 누구에게"로 묶고, 서로 줄 돈이 있으면 상계해서 한 방향만 남겨요.
 
 ## 이벤트 (window.dataLayer)
 
 | 이벤트 | 시점 | 추가 파라미터 |
 | --- | --- | --- |
 | `landing_view` | 첫 화면 렌더 | `landing_type` (explain / instant) |
-| `calc_start` | 랜딩 CTA 클릭, 또는 계산기 첫 입력 | `cta_position` (hero / calc / shared) |
+| `calc_start` | 랜딩 CTA 클릭, 또는 1단계 첫 입력 | `cta_position` (hero / calc / shared / reset) |
+| `step_view` | 1·2·3단계 화면 진입 | `step` (1~3), `direction` (start / next / back / edit) |
 | `member_add` | 참여자 2명 도달 시 1회 | `member_count` |
-| `item_add` | 첫 항목 금액 입력 시 1회 | `item_count`, `has_exclusion` |
+| `item_add` | 첫 결제금액 입력 시 1회 | `item_count` |
 | `calc_complete` | 결과 화면 도달 | `member_count`, `item_count`, `has_exclusion`, `total_amount_range` |
 | `share_link` | 공유·링크 복사 클릭 | `share_method` (web_share / copy), `share_id` |
 | `shared_view` | 공유 링크로 열람 | `share_id`, `valid` |
@@ -77,7 +85,7 @@ npm install && npm test
 
 - [ ] `index.html`의 GTM 스니펫 주석 해제 + `GTM-XXXXXXX` 교체
 - [ ] GTM: 이벤트 8개를 GA4 이벤트 태그로 연결 (dataLayer 변수로 파라미터 전달)
-- [ ] GA4 맞춤 측정기준 등록: `variant`, `entry_type`, `traffic_type`, `share_method`, `cta_position`, `landing_type`, `total_amount_range`, `share_id`
+- [ ] GA4 맞춤 측정기준 등록: `variant`, `entry_type`, `traffic_type`, `step`, `direction`, `share_method`, `cta_position`, `landing_type`, `total_amount_range`, `share_id`
 - [ ] GA4 내부 트래픽 필터: `traffic_type = internal` 기준, 테스트 모드로 검증 후 활성화
 - [ ] Microsoft Clarity 설치
 - [ ] 공유 미리보기용 `og:image` (1200×630) 추가
