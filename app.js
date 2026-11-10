@@ -1,7 +1,7 @@
 // 공평셈 — 화면과 상호작용
 // 흐름: (랜딩 A) → 1 함께한 사람 → 2 장소와 결제금액 → 3 결제한 사람·빠진 사람 → 정산 중 → 결과
 import {
-  settle, validateMembers, validateItems, validatePeople, hasExclusion, amountRange, won, iga,
+  settle, validateMembers, validateItems, validatePeople, hasExclusion, amountRange, won,
   MAX_MEMBERS, MAX_ITEMS,
 } from './calc.js';
 import { newShareId, buildShareUrl, readShareHash } from './share.js';
@@ -23,6 +23,7 @@ let shared = null; // 공유 링크로 들어온 경우 { state, shareId }
 let errors = [];
 let started = false;
 let shareId = '';
+const openOut = new Set(); // 3단계에서 '빠진 사람' 패널이 펼쳐진 장소
 
 function loadDraft() {
   try {
@@ -74,6 +75,7 @@ function go(next, { direction = 'next', push = true } = {}) {
 
 /** 3단계 진입 시: 함께한 사람 기본값은 전원 */
 function prepareStep3() {
+  openOut.clear();
   state.items.forEach((it) => {
     if (!Array.isArray(it.who)) it.who = everyone();
   });
@@ -221,25 +223,28 @@ function viewStep2() {
 function viewStep3() {
   const cards = state.items.map((it, k) => {
     const out = everyone().filter((i) => !it.who.includes(i));
-    const options = state.members.map((m, i) =>
-      `<option value="${i}" ${it.payer === i ? 'selected' : ''}>${esc(iga(m))} 결제했어요</option>`).join('');
+    const open = openOut.has(k);
+    const place = esc(placeName(it, k));
     return `
     <li class="item item--people">
       <div class="place">
-        <span>${esc(placeName(it, k))}</span><b>${won(it.amount)}</b>
+        <span>${place}</span><b>${won(it.amount)}</b>
       </div>
-      <label class="payer ${it.payer == null ? 'is-empty' : ''}">
-        <select data-field="payer" data-k="${k}" data-key="payer-${k}" aria-label="${esc(placeName(it, k))} 결제한 사람">
-          ${it.payer == null ? '<option value="" selected disabled>누가 결제했나요?</option>' : ''}
-          ${options}
-        </select>
-      </label>
-      <p class="label">함께한 사람</p>
-      <div class="who" role="group" aria-label="${esc(placeName(it, k))}에 함께한 사람">
+      <p class="label" id="payer-label-${k}">누가 결제했나요?</p>
+      <div class="who" role="radiogroup" aria-labelledby="payer-label-${k}">
         ${state.members.map((m, i) => `
-          <button class="who-chip ${it.who.includes(i) ? 'on' : ''}" data-action="toggle-who" data-k="${k}" data-i="${i}" aria-pressed="${it.who.includes(i)}" data-key="who-${k}-${i}">${esc(m)}</button>`).join('')}
+          <button class="payer-chip ${it.payer === i ? 'on' : ''}" role="radio" aria-checked="${it.payer === i}" data-action="pick-payer" data-k="${k}" data-i="${i}" data-key="payer-${k}-${i}">${esc(m)}</button>`).join('')}
       </div>
-      ${out.length ? `<p class="item-note">${out.map((i) => esc(state.members[i])).join(', ')} 빠짐</p>` : ''}
+      <button class="out-toggle ${out.length ? 'has-out' : ''} ${open ? 'open' : ''}" data-action="toggle-out-panel" data-k="${k}" aria-expanded="${open}" aria-controls="out-${k}" data-key="out-toggle-${k}">
+        ${out.length ? `${out.map((i) => esc(state.members[i])).join(', ')} 빠짐` : '빠진 사람이 있나요?'}
+      </button>
+      ${open ? `
+      <div class="out-panel" id="out-${k}" role="group" aria-label="${place}에서 빠진 사람">
+        ${state.members.map((m, i) => {
+          const isOut = !it.who.includes(i);
+          return `<button class="out-chip ${isOut ? 'on' : ''}" role="checkbox" aria-checked="${isOut}" data-action="toggle-who" data-k="${k}" data-i="${i}" data-key="who-${k}-${i}">${esc(m)}</button>`;
+        }).join('')}
+      </div>` : ''}
     </li>`;
   }).join('');
 
@@ -247,7 +252,7 @@ function viewStep3() {
   ${bar(3)}
   <main class="step">
     <h1 class="step-title">결제한 사람과<br>빠진 사람을 알려주세요</h1>
-    <p class="step-sub">장소마다 결제한 사람을 고르고, 빠진 사람은 이름을 눌러 꺼 주세요.</p>
+    <p class="step-sub">장소마다 결제한 사람의 이름을 누르고, 빠진 사람이 있으면 아래 버튼에서 골라 주세요.</p>
     <ul class="items">${cards}</ul>
     ${errorBox()}
   </main>
@@ -262,6 +267,8 @@ function viewLoading() {
     <div class="printer" aria-hidden="true">
       <div class="paper"><i></i><i></i><i></i><i></i></div>
     </div>
+    <p class="pct" aria-hidden="true"><b data-pct>0</b>%</p>
+    <div class="pct-bar" role="progressbar" aria-label="정산 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i data-bar></i></div>
     <h1 class="step-title">정산 중이에요</h1>
     <p class="step-sub">장소마다 함께한 사람끼리 나누고 있어요.</p>
   </main>`;
@@ -410,7 +417,38 @@ function trySettle() {
   shareId = newShareId();
   saveDraft();
   go('loading', { push: false });
-  setTimeout(() => go('result'), LOADING_MS);
+  runLoading(() => go('result'));
+}
+
+/** 누른 지점에서 물결이 퍼지는 효과 (움직임 줄이기 설정이면 생략) */
+function ripple(target, { x, y }) {
+  if (!target || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const dot = document.createElement('span');
+  dot.className = 'ripple';
+  dot.style.left = `${x}px`;
+  dot.style.top = `${y}px`;
+  target.appendChild(dot);
+  dot.addEventListener('animationend', () => dot.remove());
+}
+
+/** 0% → 100%를 LOADING_MS 동안 채운 뒤 done() */
+function runLoading(done) {
+  const t0 = performance.now();
+  const ease = (x) => 1 - (1 - x) ** 3;
+  const tick = (now) => {
+    const x = Math.min((now - t0) / LOADING_MS, 1);
+    const pct = Math.round(ease(x) * 100);
+    const num = root.querySelector('[data-pct]');
+    const bar = root.querySelector('[data-bar]');
+    if (num) num.textContent = pct;
+    if (bar) {
+      bar.style.width = `${pct}%`;
+      bar.parentElement.setAttribute('aria-valuenow', pct);
+    }
+    if (x < 1) requestAnimationFrame(tick);
+    else setTimeout(done, 200); // 100%를 잠깐 보여준 뒤 이동
+  };
+  requestAnimationFrame(tick);
 }
 
 async function share(method) {
@@ -488,6 +526,22 @@ root.addEventListener('click', (e) => {
     saveDraft();
     return render();
   }
+  if (a === 'pick-payer') {
+    const box = el.getBoundingClientRect();
+    const at = { x: (e.clientX || box.left + box.width / 2) - box.left, y: (e.clientY || box.top + box.height / 2) - box.top };
+    state.items[k].payer = i;
+    // 아직 결제자를 안 고른 다른 장소는 같은 사람으로 채워 둠 (대부분 한 사람이 결제)
+    state.items.forEach((it) => { if (it.payer == null) it.payer = i; });
+    errors = [];
+    saveDraft();
+    render();
+    ripple(root.querySelector(`[data-key="payer-${k}-${i}"]`), at);
+    return;
+  }
+  if (a === 'toggle-out-panel') {
+    if (openOut.has(k)) openOut.delete(k); else openOut.add(k);
+    return render();
+  }
   if (a === 'settle') return trySettle();
   if (a === 'share') return share(el.dataset.method);
   if (a === 'edit') return go('step3', { direction: 'edit' });
@@ -509,19 +563,6 @@ root.addEventListener('submit', (e) => {
 
 root.addEventListener('focusin', (e) => {
   if (view === 'step1' && e.target.matches('input')) markStarted('calc');
-});
-
-root.addEventListener('change', (e) => {
-  const el = e.target;
-  if (el.dataset.field !== 'payer') return;
-  const k = Number(el.dataset.k);
-  const p = Number(el.value);
-  state.items[k].payer = p;
-  // 아직 결제자를 안 고른 다른 장소는 같은 사람으로 채워 둠 (대부분 한 사람이 결제)
-  state.items.forEach((it) => { if (it.payer == null) it.payer = p; });
-  errors = [];
-  saveDraft();
-  render();
 });
 
 root.addEventListener('input', (e) => {
