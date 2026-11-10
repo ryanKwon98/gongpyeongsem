@@ -5,15 +5,17 @@
 
 ## 구조
 
+모든 파일이 한 폴더에 있어요 (하위 폴더 없음 — GitHub 웹 업로드로 그대로 올리기 쉽게).
+
 ```
-index.html          진입점 (GTM 스니펫 자리 포함)
-styles.css          디자인 (소주병 초록 + 영수증)
-js/calc.js          차등 정산 계산 (순수 함수)
-js/share.js         정산 내역 ↔ 공유 링크 변환
-js/track.js         이벤트 추적 레이어 (dataLayer)
-js/app.js           화면과 상호작용
-vendor/lz-string.min.js  URL 압축 라이브러리
-tests/calc.test.mjs 계산·공유 테스트 (PRD P0 산출물)
+index.html        진입점 (GTM 스니펫 자리 포함)
+styles.css        디자인 (소주병 초록 + 영수증)
+app.js            화면과 상호작용
+calc.js           차등 정산 계산 (순수 함수)
+share.js          정산 내역 ↔ 공유 링크 변환
+track.js          이벤트 추적 레이어 (dataLayer)
+lz-string.min.js  URL 압축 라이브러리
+calc.test.mjs     계산·공유 테스트 (PRD P0 산출물)
 ```
 
 ## 로컬 실행 · 테스트
@@ -28,11 +30,11 @@ npm install && npm test
 1. github.com에서 가입·로그인 후 오른쪽 위 **+** → **New repository**.
 2. Repository name에 `gongpyeongsem` 입력, **Add a README file은 체크하지 않음** → **Create repository**.
 3. 만들어진 페이지에서 **uploading an existing file** 링크 클릭.
-4. 컴퓨터의 `gongpyeongsem` 폴더를 열고, **폴더 자체가 아니라 안의 파일·폴더 전부**(index.html, styles.css, js, vendor, tests 등)를 선택해 업로드 영역으로 끌어다 놓기.
+4. 컴퓨터의 `gongpyeongsem` 폴더를 열고, 안의 파일 전부를 선택해 업로드 영역으로 끌어다 놓기.
 5. 아래 **Commit changes** 클릭.
 6. 저장소 첫 화면에 `index.html`이 바로 보이면 성공.
 
-수정한 파일을 다시 올릴 때는 저장소 첫 화면 **Add file** → **Upload files**에 같은 이름의 파일을 끌어다 놓으면 덮어써져요. 하위 폴더 파일(예: `js/app.js`)은 `js` 폴더로 들어간 뒤 업로드해요.
+수정한 파일을 다시 올릴 때는 저장소 첫 화면 **Add file** → **Upload files**에 같은 이름의 파일을 끌어다 놓으면 덮어써지고, Vercel이 자동으로 다시 배포해요.
 
 ## 배포 (Vercel)
 

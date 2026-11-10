@@ -3,11 +3,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { settle, validate, hasExclusion, amountRange } from '../js/calc.js';
+import { settle, validate, hasExclusion, amountRange } from './calc.js';
 
 const require = createRequire(import.meta.url);
 globalThis.LZString = require('lz-string');
-const { encodeState, decodeState, buildShareUrl, readShareHash } = await import('../js/share.js');
+const { encodeState, decodeState, buildShareUrl, readShareHash } = await import('./share.js');
 
 const all = (n) => Array.from({ length: n }, (_, i) => i);
 const owes = (r) => r.people.map((p) => p.owe);
